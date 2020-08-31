@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/shruthig-dev/tinyapp/issues"
   },
-  "homepage": "https://github.com/shruthig-dev/tinyapp#readme"
+  "homepage": "https://github.com/shruthig-dev/tinyapp#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
 }

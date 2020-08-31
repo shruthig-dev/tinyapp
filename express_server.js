@@ -29,9 +29,16 @@ app.get("/hello", (req, res) => {
   let templateVars = { greeting: 'Hello World!' };
   res.render("hello_world", templateVars);
 });
+app.get("/u/:shortURL", (req, res) => {
+     const longURL = urlDatabase[req.params.shortURL];
+    res.redirect(longURL);
+  });
 app.post("/urls", (req, res) => {
-    console.log(req.body);  // Log the POST request body to the console
-    res.send("Ok");         // Respond with 'Ok' (we will replace this)
+    console.log(req.body);  
+    //res.send("Ok");       
+    //let newUrlId = generateRandomString();
+    let newUrl = urlDatabase["b2xVn2"];
+    res.redirect(newUrl);
   });
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
@@ -39,7 +46,7 @@ app.listen(PORT, () => {
 
 function generateRandomString() {
     var result = '';
-    const char = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
     for (var i = 6; i > 0; --i) 
     {
         result += chars[Math.floor(Math.random() * chars.length)];

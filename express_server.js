@@ -3,7 +3,9 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 
+
 app.set("view engine", "ejs");
+
 app.use(bodyParser.urlencoded({extended: true}));
 
 const urlDatabase = {
@@ -26,12 +28,11 @@ app.get("/urls/:shortURL", (req, res) => {
   let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
 
   if (templateVars.longURL !== undefined || null) {
-    res.redirect(templateVars.longURL);
+    res.render("urls_show", templateVars);
   } else {
-    res.send("Not Found");
+    res.send("Url not found");
   }
-
-  //res.render("urls_show", templateVars);
+  res.render("urls_show", templateVars);
 });
 app.get("/hello", (req, res) => {
   let templateVars = { greeting: 'Hello World!' };
@@ -44,7 +45,6 @@ app.get("/u/:shortURL", (req, res) => {
   } else {
     res.send("Not Found");
   }
-    
 });
 app.post("/urls", (req, res) => {
   
@@ -61,12 +61,23 @@ app.post("/urls", (req, res) => {
     res.send("Error : Not able to create new url");
   }
 });
+
+app.post("/urls/:id",(req,res) => {
+  let url = urlDatabase[req.params.id];
+  if (url !== undefined || null) {
+    urlDatabase[req.params.id] = req.body.longURL;
+    res.redirect("/urls");
+  } else {
+    res.send("Url not found");
+  }
+});
+
 app.post("/urls/:shortURL/delete", (req, res) => {
   const id = req.params.shortURL;
-  
-  if (urlDatabase.hasOwnProperty(id)) {
+  if (Object.prototype.hasOwnProperty.call(urlDatabase, id)) {
+  //if (urlDatabase.hasOwnProperty(id)) {
     delete urlDatabase[id];
-    if (!urlDatabase.hasOwnProperty(id)) {
+    if (!Object.prototype.hasOwnProperty.call(urlDatabase, id)) {
      
       res.redirect("/urls");
     } else {

@@ -1,14 +1,56 @@
 <header>
-    <nav class="navbar navbar-expand-md navbar-dark bg-success">
-      <a class="navbar-brand" href="/urls">TinyApp</a>
-      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-      <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-        <div class="navbar-nav">
-          <a class="nav-item nav-link" href="/urls">My URLs</a>
-          <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
-        </div>
+  <nav class="navbar navbar-expand-md navbar-dark bg-success">
+    <a class="navbar-brand font-weight-bold text-light" href="/urls">TinyApp</a>
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-toggle="collapse"
+      data-target="#navbarNavAltMarkup"
+      aria-controls="navbarNavAltMarkup"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      <div class="navbar-nav h5 font-weight-bold ">
+        <a class="nav-item nav-link" href="/urls">My URLs</a>
+        <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
       </div>
-    </nav>
-  </header>
+    </div>
+
+    <div>
+      <%if (username === null || username === undefined) { %>
+      <form class="form-inline" action="/login" method="POST">
+        <div class="form-group text-light">
+          <label for="longURL">User Name:</label>
+          <input
+            class="form-control"
+            type="text"
+            name="username"
+            placeholder="Username"
+            style="width: 200px; margin: 1em"
+          />
+           <!--<label for="longURL">Password:</label>
+          <input
+            class="form-control"
+            type="text"
+            name="password"
+            placeholder="Password"
+            style="width: 200px; margin: 1em"
+          /> -->
+          <button type="submit" class="btn  btn-dark">Sign In</button>
+        </div>
+      </form>
+      <% } else{ %>
+      <div class="text-light">
+        
+        <form class="form-inline" action="/logout" method="POST">
+          <span>Logged In As <%= username %>! </span>
+          <button type="submit" class="btn btn-dark ml-2"> Logout</button>
+        </form>
+      </div>
+      <% } %>
+    </div>
+  </nav>
+</header>

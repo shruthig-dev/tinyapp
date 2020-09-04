@@ -3,6 +3,9 @@ const bodyParser = require('body-parser');
 /// var morgan = require('morgan')
 const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
+var cookieSession = require('cookie-session');
+
+
 const {
   createUser, getUserByEmailId, checkPassword, authorizeUser,
   checkIfUserCookieExists, geturlsForUser,
@@ -15,7 +18,12 @@ const PORT = 8080; // default port 8080
 app.set('view engine', 'ejs');
 // app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cookieParser());
+//app.use(cookieParser());
+
+app.use(cookieSession({
+  name: 'session',
+  keys: ['4146fa26-72b8-4caf-be85-d465e73af448', 'd6b96b47-3582-4d9d-83fa-560daab4c45a']
+}));
 
 const generateRandomString = () => {
   let result = '';
@@ -34,8 +42,9 @@ const formatUrl = (url) => {
 };
 
 const urlDatabase = {
-  b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: '8O6nO1' },
+  'b2xVn2': { longURL: 'http://www.lighthouselabs.ca', userID: '8O6nO1' },
   '9sm5xK': { longURL: 'http://www.google.com', userID: '8O6nO1' },
+  'JRw7Io': { longURL: 'http://www.democode.com', userID: 'QQxsUG' }
 };
 
 const usersObject = {
@@ -45,11 +54,16 @@ const usersObject = {
     email: 'test@gmail.com',
     password: '$2b$10$JlZmr08Ye1E38ocxJuT8hOuUQUSKJO47MX5t/1.4816nxwlRfLzPy',
   },
-
+  'QQxsUG':
+  {
+    id: "QQxsUG",
+    email: "demo@gmail.com",
+    password: "$2b$10$bFx8wqot69EuCJ4S8D/cculXI0e4F/RpC3vYTHdt5NVokwgEkB8gO"
+  }
 };
 
 app.get('/login', (req, res) => {
-  const templateVars = { user: req.cookies.user };
+  const templateVars = { user: usersObject[req.session.id] };
   res.render('login', templateVars);
 });
 
@@ -59,7 +73,7 @@ app.post('/login', (req, res) => {
   if (user === null) {
     res.status(403).json({ error: 'User does not exists.Plese enter valid Email Id' });
   } else if (checkPassword(bcrypt, user, req.body.password)) {
-    res.cookie('user', JSON.stringify(user));
+    req.session.user = user;
     res.redirect('/urls');
   } else {
     res.status(403).json({ error: 'Incorrect password.Please enter valid password' });
@@ -71,7 +85,7 @@ app.post('/logout', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  const templateVars = { user: req.cookies.user };
+  const templateVars = { user: req.session.id };
   res.render('register', templateVars);
 });
 
@@ -88,16 +102,17 @@ app.post('/register', (req, res) => {
     const hashedPassword = bcrypt.hashSync(password, salt);
     const userId = generateRandomString();
     createUser(usersObject, userId, email, hashedPassword);
-    res.cookie('user', JSON.stringify(usersObject[userId]));
+    req.session.user = usersObject[userId];
     res.redirect('/urls');
   }
 });
 
 app.get('/urls', (req, res) => {
-  if (checkIfUserCookieExists(req.cookies.user)) {
-    const user = JSON.parse(req.cookies.user);
+  console.log(JSON.stringify(req.session.user))
+  if (checkIfUserCookieExists(req.session.user)) {
+    const user = req.session.user;
     const urlsForUser = geturlsForUser(urlDatabase, user.id);
-
+    console.log(JSON.stringify(urlDatabase))
     const templateVars = { urls: urlsForUser, user };
     res.render('urls_index', templateVars);
   } else {
@@ -107,17 +122,16 @@ app.get('/urls', (req, res) => {
 });
 
 app.post('/urls', (req, res) => {
-  const user = (req.cookies.user !== null
-    && req.cookies.user !== undefined)
-    ? JSON.parse(req.cookies.user) : null;
-  if (checkIfUserCookieExists(req.cookies.user)) {
+  const userSessionObj = req.session.user;
+
+  if (checkIfUserCookieExists(userSessionObj)) {
     if (req.body.longURL === null) {
       res.status(403).json({ error: 'Please enter URL' });
     } else {
       const newUrlId = generateRandomString();
       const formattedUrl = formatUrl(req.body.longURL);
 
-      urlDatabase[newUrlId] = { longURL: formattedUrl, userID: user.id };
+      urlDatabase[newUrlId] = { longURL: formattedUrl, userID: userSessionObj.id };
 
       res.redirect('/urls');
     }
@@ -127,18 +141,19 @@ app.post('/urls', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  const templateVars = { user: req.cookies.user };
+  const templateVars = { user: req.session.user };
   res.render('urls_new', templateVars);
 });
 
 app.get('/urls/:shortURL', (req, res) => {
-  if (checkIfUserCookieExists(req.cookies.user)) {
-    const url = urlDatabase[req.params.shortURL];
-    const user = JSON.parse(req.cookies.user);
+  const userSessionObj = req.session.user;
 
-    if (url && authorizeUser(url.userID, user.id)) {
+  if (checkIfUserCookieExists(userSessionObj)) {
+    const url = urlDatabase[req.params.shortURL];
+
+    if (url && authorizeUser(url.userID, userSessionObj.id)) {
       const templateVars = {
-        shortURL: url.shortURL, longURL: url.longURL, user,
+        shortURL: url.shortURL, longURL: url.longURL, user: userSessionObj
       };
       res.render('urls_show', templateVars);
     } else {
@@ -152,15 +167,12 @@ app.get('/urls/:shortURL', (req, res) => {
 });
 
 app.get('/u/:shortURL', (req, res) => {
-  if (checkIfUserCookieExists(req.cookies.user)) {
+  const userSessionObj = req.session.user;
+  if (checkIfUserCookieExists(userSessionObj)) {
     const url = urlDatabase[req.params.shortURL];
-    const user = JSON.parse(req.cookies.user);
-    if (authorizeUser(url.userID, user.id)) {
-      if (url !== undefined || null) {
-        res.redirect(url.longURL);
-      } else {
-        res.render('error', { error: 'URL Not Found' });
-      }
+
+    if (url !== undefined && authorizeUser(url.userID, userSessionObj.id)) {
+      res.redirect(url.longURL);
     }
   } else {
     res.status(404);
@@ -170,13 +182,15 @@ app.get('/u/:shortURL', (req, res) => {
 
 // Update URL
 app.post('/urls/:id', (req, res) => {
-  if (checkIfUserCookieExists(req.cookies.user)) {
-    const url = urlDatabase[req.params.id];
-    const user = JSON.parse(req.cookies.user);
-    if (authorizeUser(url.userID, user.id)) {
-      urlDatabase[req.params.id].longURL = req.body.longURL;
+  if (checkIfUserCookieExists(req.session.user)) {
 
-      const templateVars = { urls: urlDatabase, user };
+    const url = urlDatabase[req.params.id];
+    const userSessionObj = req.session.user;
+    if (authorizeUser(url.userID, userSessionObj.id)) {
+
+      urlDatabase[req.params.id].longURL = req.body.longURL;
+      console.log("!!!190!!!!!!!" + JSON.stringify(urlDatabase));
+      const templateVars = { urls: urlDatabase, user: userSessionObj };
       res.render('urls_index', templateVars);
     } else {
       res.status(401);
@@ -189,11 +203,11 @@ app.post('/urls/:id', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  if (checkIfUserCookieExists(req.cookies.user)) {
-    const user = JSON.parse(req.cookies.user);
+  const userSessionObj = req.session.user;
+  if (checkIfUserCookieExists(userSessionObj)) {
     const url = (urlDatabase[req.params.shortURL]);
 
-    if (authorizeUser(url.userID, user.id)) {
+    if (authorizeUser(url.userID, userSessionObj.id)) {
       // delete urlDatabase[url.shortURL];
       urlDatabase[req.params.shortURL].userID = null;
 

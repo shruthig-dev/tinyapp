@@ -1,7 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 /// var morgan = require('morgan')
-const cookieParser = require('cookie-parser');
 const bcrypt = require('bcrypt');
 var cookieSession = require('cookie-session');
 
@@ -13,12 +12,10 @@ const {
 
 const app = express();
 const salt = bcrypt.genSaltSync(10);
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
 app.set('view engine', 'ejs');
-// app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
-//app.use(cookieParser());
 
 app.use(cookieSession({
   name: 'session',
@@ -152,8 +149,10 @@ app.get('/urls/:shortURL', (req, res) => {
     const url = urlDatabase[req.params.shortURL];
 
     if (url && authorizeUser(url.userID, userSessionObj.id)) {
+      console.log("________"+JSON.stringify(req.params.shortURL));
+
       const templateVars = {
-        shortURL: url.shortURL, longURL: url.longURL, user: userSessionObj
+        shortURL: req.params.shortURL, longURL: url.longURL, user: userSessionObj
       };
       res.render('urls_show', templateVars);
     } else {
@@ -208,7 +207,6 @@ app.post('/urls/:shortURL/delete', (req, res) => {
     const url = (urlDatabase[req.params.shortURL]);
 
     if (authorizeUser(url.userID, userSessionObj.id)) {
-      // delete urlDatabase[url.shortURL];
       urlDatabase[req.params.shortURL].userID = null;
 
       if (urlDatabase[req.params.shortURL]) {

@@ -10,15 +10,17 @@ const checkPassword = (bcrypt, userObj, formPassword) => {
   return bcrypt.compareSync(formPassword, storedPassword);
 };
 const getUserByEmailId = (userObj, email) => {
+  let userData ;
   for (const key in userObj) {
     if (userObj.hasOwnProperty(key)) {
       const userEmail = userObj[key].email;
       if (email === userEmail) {
-        return userObj[key];
+        userData = userObj[key];
+        return userData;
       }
     }
   }
-  return null;
+  return userData;
 };
 
 const checkIfUserCookieExists = (UserCookie) => {

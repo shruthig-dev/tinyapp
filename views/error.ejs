@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+
+  
+  <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
@@ -9,33 +11,23 @@
   <title>TinyApp</title>
 </head>
 <body>
-    <%- include('partials/_header') %>
+   
+<header>
+    <nav class="navbar navbar-expand-md navbar-dark bg-success">
+      <a class="navbar-brand font-weight-bold text-light" href="/#">TinyApp</a>
+    </nav>
+  </header>
   <main style="margin: 1em;">
-    <h3>My URLs</h3>
-    <table class="table">
-      <thead>
-        <tr>
-          <th scope="col">Short URL</th>
-          <th scope="col">Long URL</th>
-          <th scope="col">Edit </th>
-          <th scope="col">Delete</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% for(let url in urls) { %>
-          <tr> 
-            <td><%= url  %></td>
-            <td><a target="_blank" href="<%= urls[url].longURL %>"><%= urls[url].longURL %></td></a>
-            <td><form method="GET" action="/urls/<%= url %>">
-              <button class="btn border border-primary text-primary" type="submit">Edit</button>
-            </form></td>
-            <td><form method="POST" action="/urls/<%= url %>/delete">
-              <button class="btn border border-danger text-danger" type="submit">Delete</button>
-            </form></td>
-          </tr>
-        <% } %>
-      </tbody>
-    </table>
+    <div class="text-center">
+        <h3>Error</h3>
+        <%if(typeof error == "undefined"){%>
+            //Show some HTML here
+        <% } else { %>
+             
+             <%= error%> 
+        <%}%>
+        
+      </div>
   </main>
   <!-- Bootstrap JS -->
   <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

@@ -1,32 +1,39 @@
-
-  
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
   <!-- Bootstrap CSS -->
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
+    integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
   <title>TinyApp</title>
 </head>
+
 <body>
-   
-<header>
+
+  <header>
     <nav class="navbar navbar-expand-md navbar-dark bg-success">
       <a class="navbar-brand font-weight-bold text-light" href="/#">TinyApp</a>
     </nav>
   </header>
   <main style="margin: 1em;">
     <div class="text-center">
-        <h3>Error</h3>
-        <%if(typeof error == "undefined"){%>
-            //Show some HTML here
-        <% } else { %>
-             
-             <%= error%> 
-        <%}%>
-        
+      <h3>Error</h3>
+      <%if(error === undefined){%>
+      <%= error %>
+      <% } else { %>
+
+      <%= error%>
+      <%}%>
+       
+        <%if(typeof (isFromRegisterPage) == "undefined" || isFromRegisterPage === undefined){%>
+      <br> <a class="btn btn-primary text-center text-light  mt-2" href="/login">Back</a>
+      <% } else { %>
+
+      <br> <a class="btn btn-primary text-center text-light  mt-2" href="/Register">Back</a>
+      <%}%>
       </div>
   </main>
   <!-- Bootstrap JS -->

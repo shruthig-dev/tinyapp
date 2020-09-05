@@ -1,13 +1,11 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-/// var morgan = require('morgan')
 const bcrypt = require('bcrypt');
-var cookieSession = require('cookie-session');
-
+const cookieSession = require('cookie-session');
 
 const {
   createUser, getUserByEmailId, checkPassword, authorizeUser,
-  checkIfUserCookieExists, geturlsForUser,
+  checkIfUserCookieExists, geturlsForUser, generateRandomString, formatUrl,
 } = require('./views/helpers/helpers');
 
 const app = express();
@@ -19,29 +17,14 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.use(cookieSession({
   name: 'session',
-  keys: ['4146fa26-72b8-4caf-be85-d465e73af448', 'd6b96b47-3582-4d9d-83fa-560daab4c45a']
+  keys: ['4146fa26-72b8-4caf-be85-d465e73af448', 'd6b96b47-3582-4d9d-83fa-560daab4c45a'],
 }));
 
-const generateRandomString = () => {
-  let result = '';
-  const chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  for (let i = 6; i > 0; i -= 1) {
-    result += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return result;
-};
-
-const formatUrl = (url) => {
-  if (!/^https?:\/\//i.test(url)) {
-    return `http://${url}`;
-  }
-  return url;
-};
-
+//#region #DB Objects
 const urlDatabase = {
-  'b2xVn2': { longURL: 'http://www.lighthouselabs.ca', userID: '8O6nO1' },
+  b2xVn2: { longURL: 'http://www.lighthouselabs.ca', userID: '8O6nO1' },
   '9sm5xK': { longURL: 'http://www.google.com', userID: '8O6nO1' },
-  'JRw7Io': { longURL: 'http://www.democode.com', userID: 'QQxsUG' }
+  JRw7Io: { longURL: 'https://www.freecodecamp.org/', userID: 'QQxsUG' },
 };
 
 const usersObject = {
@@ -51,50 +34,64 @@ const usersObject = {
     email: 'test@gmail.com',
     password: '$2b$10$JlZmr08Ye1E38ocxJuT8hOuUQUSKJO47MX5t/1.4816nxwlRfLzPy',
   },
-  'QQxsUG':
+  QQxsUG:
   {
-    id: "QQxsUG",
-    email: "demo@gmail.com",
-    password: "$2b$10$bFx8wqot69EuCJ4S8D/cculXI0e4F/RpC3vYTHdt5NVokwgEkB8gO"
-  }
+    id: 'QQxsUG',
+    email: 'demo@gmail.com',
+    password: '$2b$10$bFx8wqot69EuCJ4S8D/cculXI0e4F/RpC3vYTHdt5NVokwgEkB8gO',
+  },
 };
-
+//endregion
+app.get('/', (req, res) => {
+  if (req.session.user) {
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
+});
+//#region #Registeration and Login 
 app.get('/login', (req, res) => {
-  const templateVars = { user: usersObject[req.session.id] };
-  res.render('login', templateVars);
+  if (req.session.user === null || req.session.user === undefined) {
+    res.render('login');
+  } else {
+    res.redirect('/urls');
+  }
 });
 
 app.post('/login', (req, res) => {
   const user = getUserByEmailId(usersObject, req.body.email);
 
   if (user === null) {
-    res.status(403).json({ error: 'User does not exists.Plese enter valid Email Id' });
+    res.status(403).render('error', { error: 'User does not exists.Plese enter valid Email Id' });
   } else if (checkPassword(bcrypt, user, req.body.password)) {
     req.session.user = user;
     res.redirect('/urls');
   } else {
-    res.status(403).json({ error: 'Incorrect password.Please enter valid password' });
+    res.status(403).render('error', { error: 'Incorrect password. Please enter valid password' });
   }
 });
 app.post('/logout', (req, res) => {
-  res.clearCookie('user', null);
+  req.session = null;
   res.redirect('login');
 });
 
 app.get('/register', (req, res) => {
-  const templateVars = { user: req.session.id };
-  res.render('register', templateVars);
+  if (req.session.user === null || req.session.user === undefined) {
+    res.render('register');
+  } else {
+    res.redirect('/urls');
+  }
 });
 
 app.post('/register', (req, res) => {
   const { email, password } = req.body;
 
   if (!email) {
-    res.status(400).json({ error: 'Please enter Email Id' });
+    res.status(400).render('error', { error: 'Please enter Email Id', isFromRegisterPage: true });
   } else if (!password) {
-    res.status(400).json({ error: 'Please enter Password' });
+    res.status(400).render('error', { error: 'Please enter Password', isFromRegisterPage: true });
   } else if (getUserByEmailId(usersObject, email) !== null) {
-    res.status(400).json({ error: `User with  ${email} already exists in database` });// success: false,
+    res.status(400).render('error', { error: `User with  ${email} already exists in the database`, isFromRegisterPage: true });
   } else {
     const hashedPassword = bcrypt.hashSync(password, salt);
     const userId = generateRandomString();
@@ -103,18 +100,19 @@ app.post('/register', (req, res) => {
     res.redirect('/urls');
   }
 });
+/*
+  URL GET POST DELETE Methods
+*/
 
 app.get('/urls', (req, res) => {
-  console.log(JSON.stringify(req.session.user))
   if (checkIfUserCookieExists(req.session.user)) {
-    const user = req.session.user;
+    const { user } = req.session;
     const urlsForUser = geturlsForUser(urlDatabase, user.id);
-    console.log(JSON.stringify(urlDatabase))
+
     const templateVars = { urls: urlsForUser, user };
     res.render('urls_index', templateVars);
   } else {
-    res.status(404);
-    res.render('error', { error: 'Please Login/Register to view URLS' });
+    res.status(404).render('error', { error: 'Please Login/Register to view URLS' });
   }
 });
 
@@ -123,7 +121,7 @@ app.post('/urls', (req, res) => {
 
   if (checkIfUserCookieExists(userSessionObj)) {
     if (req.body.longURL === null) {
-      res.status(403).json({ error: 'Please enter URL' });
+      res.status(403).render('error', { error: 'Please enter URL' });
     } else {
       const newUrlId = generateRandomString();
       const formattedUrl = formatUrl(req.body.longURL);
@@ -133,7 +131,7 @@ app.post('/urls', (req, res) => {
       res.redirect('/urls');
     }
   } else {
-    res.render('error', { error: 'Please login to create Urls' });
+    res.statusCode(401).render('error', { error: 'Please login to create Urls' });
   }
 });
 
@@ -149,19 +147,15 @@ app.get('/urls/:shortURL', (req, res) => {
     const url = urlDatabase[req.params.shortURL];
 
     if (url && authorizeUser(url.userID, userSessionObj.id)) {
-      console.log("________"+JSON.stringify(req.params.shortURL));
-
       const templateVars = {
-        shortURL: req.params.shortURL, longURL: url.longURL, user: userSessionObj
+        shortURL: req.params.shortURL, longURL: url.longURL, user: userSessionObj,
       };
       res.render('urls_show', templateVars);
     } else {
-      res.status(401);
-      res.render('error', { error: 'Not-Authorized to access this URL' });
+      res.status(401).render('error', { error: 'Not-Authorized to access this URL' });
     }
   } else {
-    res.status(404);
-    res.render('error', { error: 'Please Login/Register to view URLS' });
+    res.status(404).render('error', { error: 'Please Login/Register to view URLS' });
   }
 });
 
@@ -174,30 +168,23 @@ app.get('/u/:shortURL', (req, res) => {
       res.redirect(url.longURL);
     }
   } else {
-    res.status(404);
-    res.render('error', { error: 'Please Login/Register to view URLS' });
+    res.status(404).render('error', { error: 'Please Login/Register to view URLS' });
   }
 });
 
 // Update URL
 app.post('/urls/:id', (req, res) => {
   if (checkIfUserCookieExists(req.session.user)) {
-
     const url = urlDatabase[req.params.id];
     const userSessionObj = req.session.user;
     if (authorizeUser(url.userID, userSessionObj.id)) {
-
       urlDatabase[req.params.id].longURL = req.body.longURL;
-      console.log("!!!190!!!!!!!" + JSON.stringify(urlDatabase));
-      const templateVars = { urls: urlDatabase, user: userSessionObj };
-      res.render('urls_index', templateVars);
+      res.redirect('/urls');
     } else {
-      res.status(401);
-      res.render('error', { error: 'Not-Authorized to access this URL' });
+      res.status(401).render('error', { error: 'Not-Authorized to access this URL' });
     }
   } else {
-    res.status(404);
-    res.render('error', { error: 'Please Login/Register to view URLS' });
+    res.status(404).render('error', { error: 'Please Login/Register to view URLS' });
   }
 });
 
@@ -212,19 +199,14 @@ app.post('/urls/:shortURL/delete', (req, res) => {
       if (urlDatabase[req.params.shortURL]) {
         res.redirect('/urls');
       } else {
-        res.render('error', { error: 'Delete operation failed.' });
+        res.statusCode(500).render('error', { error: 'Delete operation failed.' });
       }
     } else {
-      res.status(401);
-      res.render('error', { error: 'Not-Authorized to access this URL' });
+      res.status(401).render('error', { error: 'Not-Authorized to access this URL' });
     }
   } else {
-    res.status(404);
-    res.render('error', { error: 'Please Login/Register to view URLS' });
+    res.status(404).render('error', { error: 'Please Login/Register to view URLS' });
   }
-});
-app.get('/', (req, res) => {
-  res.redirect('/urls');
 });
 
 app.listen(PORT, () => {

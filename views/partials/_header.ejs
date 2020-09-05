@@ -20,27 +20,19 @@
     </div>
 
     <div>
-      <%if (user === undefined || user === null ) { %>
-      <!-- <form class="form-inline" action="/login" method="GET">
-        <div class="form-group text-light">
-          <button type="submit" class="btn  btn-dark">Login</button>
-      </form> -->
-      <!-- <form class="form-inline" action="/register" method="GET">
-        <div class="form-group text-light ml-2">
-          <button type="submit" class="btn  btn-dark">Register</button>
-      </form> -->
-      <div class="text-light h5 font-weight-bold">
-        <a class="text-light ml-2" href="/login">Login</a> |
-        <a class="text-light" href="/register">Register</a>
-      </div>
-
-      <% } else{ %>
+      <%if (user) { %>
+      
       <div class="text-light">
         <form class="form-inline" action="/logout" method="POST">
           <span>Logged In As <%= user.email %>! </span>
           <button type="submit" class="btn btn-dark ml-2">Logout</button>
         </form>
       </div>
+      <% } else{ %>
+        <div class="text-light h5 font-weight-bold">
+          <a class="text-light ml-2" href="/login">Login</a> |
+          <a class="text-light" href="/register">Register</a>
+        </div>
       <% } %>
     </div>
   </nav>
